@@ -5,13 +5,11 @@
 #ifndef PAYLOAD_SCRAPER_H
 #define PAYLOAD_SCRAPER_H
 
-#endif
-
-
 struct steg_type
 {
    int type;
-   char extension[10];
+   string  extension;
+   int (*capacity_function)(const char* payload, int len);
 };
 
 /** 
@@ -27,14 +25,14 @@ class payload_scraper
 protected:
 
     static const int _c_no_of_steg_protocol = 5;
-    char* _database_filename;
-    fostream _payload_db = NULL;
+    string _database_filename;
+    ofstream _payload_db;
     steg_type* _available_stegs = NULL;
-p    
-    char* _apache_conf_filename = NULL;
-    char* _apache_doc_root = NULL; /* the directory that apache serve where
-                               the html doc*/
     
+    string _apache_conf_filename;
+    string _apache_doc_root; /* the directory that apache serve where
+                               the html doc*/
+    const int c_no_of_steg_protocol = 6;
     /* 
        Scrapes current directory, recursively calls itself for
        for subdirs, return number of payload if successful -1 
@@ -42,7 +40,7 @@ p
 
        @param cur_dir the name of the dir to be scraped
      */
-    int scrape_dir(char* cur_dir);
+    int scrape_dir(const path cur_dir);
 
    /** 
        open the apache configuration file, search for DocumentRoot
@@ -58,10 +56,13 @@ public:
 
       @param database_filename the name of the file to store the payload list   
     */
-   payload_scraper(char* database_filename,  apache_conf = "/etc/httpd/conf/httpd.conf");
+   payload_scraper(string database_filename,  const string apache_conf = "/etc/httpd/conf/httpd.conf");
 
    /** reads all the files in the Doc root and classifies them. return the number of payload file founds. -1 if it fails
    */
    int scrape();
 
-}
+};
+#endif
+
+

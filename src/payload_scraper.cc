@@ -2,17 +2,23 @@
    See LICENSE for other credits and copying information
 */
 
-#inculde <ofstream> 
-#inculde <stdio.h>
+#include <iostream>
+#include <fstream> 
+#include <string>
+#include <stdio.h>
 #include <boost/filesystem.hpp>
-#include "util.h"
-#include "payload.h"
-#include "payload_scraper.h"
-#include "crypto.h"
-#include "base64.h"
 
 using namespace std;
-using boost::filesystem;
+using namespace boost::filesystem;
+
+#define DELETE_METHOD = delete
+
+#include "util.h"
+#include "crypt.h"
+#include "payloads.h"
+#include "payload_scraper.h"
+#include "base64.h"
+
 /** We read the /etc/httpd/conf/httpd.conf (this need to be more dynamic)
     but I'm testing it on my system which is running arch) find
     the DocumentRoot. Then it will check the directory recursively and
@@ -28,26 +34,29 @@ using boost::filesystem;
 */
 int payload_scraper::scrape_dir(const path dir_path)
 {
-  total_file_count = 0;
-  char url_hash[20], url_hash64[40];
+  long int total_file_count = 0;
+  char url_hash[20];
+  char url_hash64[40];
 
   if ( !exists( dir_path ) ) 
     {
       return -1;
 
-      basic_recursive_directory_iterator end_itr; // default construction yields past-the-end
-      for ( basic_recursive_directory_iterator itr( dir_path ))
+      recursive_directory_iterator end_itr; // default construction yields past-the-end
+      for ( recursive_directory_iterator itr( dir_path );
         itr != end_itr;
       ++itr, total_file_count++)
         {
-          for(steg_typ* cur_steg = _available_steg; _available_steg->steg_type!= 0; cur_steg++)
-            if (!strcmp(_cur_steg->extension; itr->extension()))
+          for(steg_type* cur_steg = _available_stegs; _available_stegs->type!= 0; cur_steg++)
+            if (cur_steg->extension == itr->path().extension())
             {
-              sha256(path, path.length(), url_hash);
-              encode(url_hash, 20, url_hash64);
+              string cur_filename(itr->path().generic_string());
+              sha256((const unsigned char *)(cur_filename.c_str()), cur_filename.length(), (unsigned char*)url_hash);
+              base64::encoder url_hash_encoder;
+              url_hash_encoder.encode(url_hash, 20, url_hash64);
               
-              istream cur_file;
-              cur_file.open(path.leaf(), ios:b | ios:r);
+              ifstream cur_file;
+              cur_file.open(cur_filename.c_str()); //, ios::binary | ios::in);
 
               if (~cur_file.is_open())
                 {
@@ -55,19 +64,23 @@ int payload_scraper::scrape_dir(const path dir_path)
                   continue;
                 }
               
-              payload_buf = new char[cur_file.length()];
-              cur_file.read(payload_buf, cur_file.length());
+               cur_file.seekg (0, ios::end);
+               unsigned long cur_filelength = cur_file.tellg();
+               cur_file.seekg (0, ios::beg);
+               
+               char* payload_buf = new char[cur_filelength];
+               cur_file.read(payload_buf, cur_filelength);
 
-              capacity = cur_steg.capacity_function(payload_buf, cur_file.lenght());
+               unsigned long capacity = cur_steg->capacity_function(payload_buf, cur_filelength);
               
-              cur_file.close();
+               cur_file.close();
+               delete payload_buf;
               
-              _payload_db << total_file_count << ", " << cur_steg->type << "," << url_hash64 << "," << capacity << "," << "\n";
+               _payload_db << total_file_count << ", " << cur_steg->type << "," << url_hash64 << "," << capacity << "," << cur_filelength << "\n";
             }
         }
-   }
+    }
 
-  close
   return false; 
 
 }
@@ -77,24 +90,21 @@ int payload_scraper::scrape_dir(const path dir_path)
     
     @param database_filename the name of the file to store the payload list   
 */
-payload_scraper::payload_scraper(char* database_filename, apache_conf = "/etc/httpd/conf/httpd.conf")
+payload_scraper::payload_scraper(string  database_filename, string apache_conf)
 {
-  strcpy(_database_filename, database_filename);
-  strcpy(_apache_conf, apache_conf);
+  _database_filename = database_filename;
+  _apache_conf_filename  = apache_conf;
 
   /** This is hard coded */
-  _available_steg = new steg_type[c_no_of_steg_protocol = 3];
+  _available_stegs = new steg_type[c_no_of_steg_protocol];
 
-  steg_type[0].type = HTTP_CONTENT_JAVASCRIPT; scp(steg_type[0].extensio
-                                                   ,"js");  steg_type[0].capacity_function = capacityJS3;
-  steg_type[1].type = HTTP_CONTENT_PDF; scp(steg_type[0].extensio
-                                                   ,"pdf"); steg_type[0].capacity_function = capacityPDF
-  steg_type[3].type = HTTP_CONTENT_SWF; scp(steg_type[0].extensio
-                                            ,"swf");  steg_type[0].capacity_function = capacitySWF;
-  steg_type[5].type = HTTP_CONTENT_HTML; scp(steg_type[0].extensio
-                                                   ,"html");  steg_type[0].capacity_function = capacityJS3
-  steg_type[5].type = HTTP_CONTENT_HTML; scp(steg_type[0].extensio
-                                                   ,"htm");  steg_type[0].capacity_function = capacityJS3
+  _available_stegs[0].type = HTTP_CONTENT_JAVASCRIPT; _available_stegs[0].extension = "js";  _available_stegs[0].capacity_function = capacityJS31;
+  _available_stegs[1].type = HTTP_CONTENT_PDF; _available_stegs[0].extension = "pdf"; _available_stegs[0].capacity_function = capacityPDF1;
+  _available_stegs[2].type = HTTP_CONTENT_SWF; _available_stegs[0].extension = "swf";  _available_stegs[0].capacity_function = capacitySWF1;
+  _available_stegs[3].type = HTTP_CONTENT_HTML; _available_stegs[0].extension = "html";  _available_stegs[0].capacity_function = capacityJS31;
+  _available_stegs[4].type = HTTP_CONTENT_HTML; _available_stegs[0].extension = "htm";  _available_stegs[0].capacity_function = capacityJS31;
+
+ _available_stegs[5].type = 0;
 }
 
 /** 
@@ -104,9 +114,9 @@ int payload_scraper::scrape()
 {
   /* open the database file for write this will delete the
      current content */
-  payload_db.open(_database_filename);
+  _payload_db.open(_database_filename.c_str());
 
-  if (!payload_db.is_open())
+  if (!_payload_db.is_open())
     {
       fprintf(stderr, "Error opening the payload database file.");
       return -1;
@@ -126,12 +136,11 @@ int payload_scraper::scrape()
     {
       fprintf(stderr, "Error in retrieving payload dir.");
       _payload_db.close();
-      reutrn -1;
+      return -1;
     }
     
   _payload_db.close();
   return 0;
-
   
 }
 
@@ -143,9 +152,10 @@ int payload_scraper::scrape()
 int payload_scraper::apache_conf_parser()
 {
   /* open the apache config file to find the doc root dir*/
-  FILE* apache_conf
+  FILE* apache_conf;
 
-    if (fopen(_apache_conf_filename, "br"))
+  apache_conf = fopen(_apache_conf_filename.c_str(), "br");
+  if (apache_conf == NULL)
     {
       fprintf(stderr, "Error opening apache config file.");
       return 0;
@@ -153,16 +163,16 @@ int payload_scraper::apache_conf_parser()
 
   char* cur_line = NULL;
   size_t line_length;
-  while(!feof(apache_conf))
+  while(~feof(apache_conf))
     {
       xgetline(&cur_line, &line_length, apache_conf);
       /*pass the comment*/
       if ((line_length > 0) && ( cur_line[0] = '#')) continue;
 
-      if (!strncmp(cur_line, "DocumentRoot", strlen("DocumentRoot")))
+      if (~strncmp(cur_line,"DocumentRoot", strlen("DocumentRoot")))
         {
           _apache_doc_root = new char[line_length - strlen("DocumentRoot ")];
-          strcpy(_apache_doc_root, cur_len + strlen("DocumentRoot "),line_length - strlen("DocumentRoot "));
+          _apache_doc_root =  cur_line + strlen("DocumentRoot ");
           return 0;
         }
     }
