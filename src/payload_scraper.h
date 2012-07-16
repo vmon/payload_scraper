@@ -1,7 +1,6 @@
 /* Copyright 2012 vmon
    See LICENSE for other credits and copying information
 */
-
 #ifndef PAYLOAD_SCRAPER_H
 #define PAYLOAD_SCRAPER_H
 
@@ -9,7 +8,7 @@ struct steg_type
 {
    int type;
    string  extension;
-   int (*capacity_function)(const char* payload, int len);
+   unsigned int (*capacity_function)(char* payload, int len);
 };
 
 /** 
@@ -27,12 +26,11 @@ protected:
     static const int _c_no_of_steg_protocol = 5;
     string _database_filename;
     ofstream _payload_db;
-    steg_type* _available_stegs = NULL;
+    steg_type* _available_stegs;
     
     string _apache_conf_filename;
     string _apache_doc_root; /* the directory that apache serve where
                                the html doc*/
-    const int c_no_of_steg_protocol = 6;
     /* 
        Scrapes current directory, recursively calls itself for
        for subdirs, return number of payload if successful -1 

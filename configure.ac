@@ -8,16 +8,28 @@ AM_MAINTAINER_MODE([enable])
 ### Programs ###
 
 AC_PROG_CXX
+AC_PROG_RANLIB
+PKG_PROG_PKG_CONFIG
+
 
 ### Libraries ###
+# Presently no need for libssl, only libcrypto.
+# We require version 1.0.1 for GCM support.
+PKG_CHECK_MODULES([libcrypto], [libcrypto >= 1.0.1])
+# libevent 2.0 radically changed the API
+PKG_CHECK_MODULES([libz], [zlib >= 1.2.3.4])
+
+LIBS="$libevent_LIBS $libcrypto_LIBS $libz_LIBS -lboost_system -lboost_filesystem"
+
 
 ### Language features ###
 
 ### Language features ###
 AC_CHECK_HEADERS([execinfo.h],,,[/**/])
 
-AX_CXX_DELETE_METHOD
-AX_CXX_STATIC_ASSERT
+#AX_CXXFLAGS_STDCXX_11([ext])
+#AX_CXX_DELETE_METHOD
+#AX_CXX_STATIC_ASSERT
 
 ### Output ###
 
