@@ -19,7 +19,7 @@ PKG_CHECK_MODULES([libcrypto], [libcrypto >= 1.0.1])
 # libevent 2.0 radically changed the API
 PKG_CHECK_MODULES([libz], [zlib >= 1.2.3.4])
 
-LIBS="$libevent_LIBS $libcrypto_LIBS $libz_LIBS -lboost_system -lboost_filesystem"
+LIBS="$libevent_LIBS $libcrypto_LIBS $libz_LIBS -lboost_system -lboost_filesystem -lcurl"
 
 
 ### Language features ###

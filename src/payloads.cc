@@ -1,1 +1,0 @@
-../../stegotorus/src/steg/payloads.cc

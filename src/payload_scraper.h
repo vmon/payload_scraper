@@ -1,14 +1,15 @@
 /* Copyright 2012 vmon
    See LICENSE for other credits and copying information
 */
-#ifndef PAYLOAD_SCRAPER_H
-#define PAYLOAD_SCRAPER_H
+#ifndef PAYLOADSCRAPER_H
+#define PAYLOADSCRAPER_H
 
 struct steg_type
 {
    int type;
    string  extension;
    unsigned int (*capacity_function)(char* payload, int len);
+
 };
 
 /** 
@@ -19,7 +20,7 @@ struct steg_type
     in a database file.
 */
 
-class payload_scraper
+class PayloadScraper
 {
 protected:
 
@@ -31,6 +32,11 @@ protected:
     string _apache_conf_filename;
     string _apache_doc_root; /* the directory that apache serve where
                                the html doc*/
+
+    ApachePayloadServer capacity_server; /* We use this auxiliary in task of
+                                         computing the capacity of the 
+                                         payloads */
+
     /* 
        Scrapes current directory, recursively calls itself for
        for subdirs, return number of payload if successful -1 
@@ -47,6 +53,16 @@ protected:
    */
    int apache_conf_parser();
 
+   /** 
+       Use curl to get the payload in the way that Apache is going to serve
+       it and compute it's capacity. return the pair (length of the payload,
+       capacity of the payload) otherwise (0,0) if not successful
+       
+       @param payload_url The relative (to the apache_root) filename of the 
+                          payload
+   */
+   pair<unsigned long, unsigned long>  compute_capacity(string payload_url, steg_type* cur_steg);
+   
 public:
 
    /** 
@@ -54,7 +70,7 @@ public:
 
       @param database_filename the name of the file to store the payload list   
     */
-   payload_scraper(string database_filename,  const string apache_conf = "/etc/httpd/conf/httpd.conf");
+   PayloadScraper(string database_filename,  const string apache_conf = "/etc/httpd/conf/httpd.conf");
 
    /** reads all the files in the Doc root and classifies them. return the number of payload file founds. -1 if it fails
    */

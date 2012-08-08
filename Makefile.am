@@ -13,7 +13,9 @@ scraper_tester_SOURCES = \
 	src/util_tmp.cc \
 	src/crypt.cc \
 	src/base64.cc \
-	src/payloads.cc \
+	src/curl_util.cc \
+	src/payload_server.cc \
+	src/apache_payload_server.cc \
 	src/payload_scraper.cc \
 	src/main.cc
 
